@@ -1,0 +1,213 @@
+#!/usr/bin/env bash
+
+# SAALIM GRAFFITI — Blue & White Fedora System Fetch with Hacker Animation
+
+set -u
+
+# Color palette (Blue & White)
+blue=$'\033[38;2;55;145;255m'
+white=$'\033[38;2;245;245;255m'
+dim=$'\033[38;2;125;145;175m'
+reset=$'\033[0m'
+bold=$'\033[1m'
+
+# Operating system and kernel
+source /etc/os-release 2>/dev/null || true
+os_name="${PRETTY_NAME:-Fedora Linux}"
+kernel="$(uname -r)"
+
+# CPU
+cpu="$(awk -F ': ' '/model name/ {print $2; exit}' /proc/cpuinfo)"
+cpu="${cpu:-Unknown CPU}"
+cpu="${cpu//(R)/}"
+cpu="${cpu//(TM)/}"
+cpu="${cpu//CPU /}"
+
+# GPU Cleaning Helper (Extracts bracket names like [GeForce MX330])
+clean_gpu() {
+    local raw="$1"
+    raw="${raw#*:} "
+    raw="${raw//(rev *)/}"
+    raw="${raw//Corporation /}"
+    raw="${raw//Technologies Inc /}"
+    
+    # Extract the user-friendly name inside square brackets if present
+    if [[ "$raw" =~ \[([^]]+)\] ]]; then
+        raw="${BASH_REMATCH[1]}"
+    fi
+    
+    # Format NVIDIA MX330 cleanly
+    if [[ "$raw" =~ MX330|GeForce|GP108 ]]; then
+        echo "NVIDIA GeForce MX330"
+    else
+        echo "$raw" | xargs
+    fi
+}
+
+gpu1="Not detected"
+gpu2=""
+
+if command -v lspci >/dev/null 2>&1; then
+    mapfile -t detected_gpus < <(
+        lspci 2>/dev/null |
+        grep -Ei 'VGA compatible controller|3D controller|Display controller'
+    )
+
+    if [[ ${#detected_gpus[@]} -gt 0 ]]; then
+        gpu1="$(clean_gpu "${detected_gpus[0]}")"
+    fi
+    if [[ ${#detected_gpus[@]} -gt 1 ]]; then
+        gpu2="$(clean_gpu "${detected_gpus[1]}")"
+    fi
+fi
+
+# RAM usage in GiB
+read -r total available < <(
+    awk '
+      /^MemTotal:/ { total=$2 }
+      /^MemAvailable:/ { available=$2 }
+      END { printf "%.1f %.1f\n", total/1048576, available/1048576 }
+    ' /proc/meminfo
+)
+
+used="$(awk -v t="$total" -v a="$available" \
+    'BEGIN { printf "%.1f", t-a }')"
+
+# Shell, desktop, and current user
+shell_name="${SHELL##*/}"
+desktop="${XDG_CURRENT_DESKTOP:-Unknown}"
+desktop="${desktop//:/ /}"
+current_user="${USER:-$(whoami)}"
+
+# Uptime
+uptime_text="$(uptime -p 2>/dev/null | sed 's/^up //')"
+uptime_text="${uptime_text:-Unknown}"
+
+# Build dynamic labels and values arrays
+labels=(
+'Host'
+'────────────────'
+'Operating System'
+'Kernel'
+'CPU'
+'GPU 1'
+)
+values=(
+"${current_user}@fedora"
+'────────────────────────────────────────'
+"$os_name"
+"$kernel"
+"$cpu"
+"$gpu1"
+)
+
+if [[ -n "$gpu2" ]]; then
+    labels+=('GPU 2')
+    values+=("$gpu2")
+fi
+
+labels+=('RAM' 'Shell' 'Desktop' 'Uptime')
+values+=("$used / $total GiB" "$shell_name" "$desktop" "$uptime_text")
+
+# Left Column Branding Array
+left_side=(
+'  ███████╗██╗  ██╗'
+'  ██╔════╝██║ ██╔╝'
+'  ███████╗█████╔╝ '
+'  ╚════██║██╔═██╗ '
+'  ███████║██║  ██╗'
+'  ╚══════╝╚═╝  ╚═╝'
+'                  '
+'  SAALIM KHAN     '
+'  ───────────     '
+'                  '
+)
+
+while [[ ${#left_side[@]} -lt ${#labels[@]} ]]; do
+    left_side+=('                  ')
+done
+
+gap='     '
+
+printf '\n'
+
+# Hacker typing speed
+char_delay=0.003
+
+for i in "${!labels[@]}"; do
+    left="${left_side[i]}"
+    label="${labels[i]}"
+    value="${values[i]}"
+
+    # Row 0: Hostname
+    if (( i == 0 )); then
+        left_str=$(printf '  %s%s' "$left" "$gap")
+        
+        printf '%b' "$blue$bold"
+        for (( j=0; j<${#left_str}; j++ )); do
+            char="${left_str:$j:1}"
+            printf '%s' "$char"
+            [[ "$char" != " " ]] && sleep "$char_delay"
+        done
+        
+        printf '%b' "$white$bold"
+        for (( j=0; j<${#value}; j++ )); do
+            char="${value:$j:1}"
+            printf '%s' "$char"
+            [[ "$char" != " " ]] && sleep "$char_delay"
+        done
+        printf '%b\n' "$reset"
+        continue
+    fi
+
+    # Row 1: Header Divider
+    if (( i == 1 )); then
+        full_line=$(printf '  %s%s%s' "$left" "$gap" "$value")
+        printf '%b' "$blue$bold"
+        for (( j=0; j<${#full_line}; j++ )); do
+            char="${full_line:$j:1}"
+            printf '%s' "$char"
+            [[ "$char" != " " ]] && sleep "$char_delay"
+        done
+        printf '%b\n' "$reset"
+        continue
+    fi
+
+    # Standard Metrics
+    left_str=$(printf '  %s%s' "$left" "$gap")
+    formatted_label=$(printf '%-18s' "$label")
+    
+    # Print Left Column + Label in Blue
+    printf '%b' "$blue$bold"
+    for (( j=0; j<${#left_str}; j++ )); do
+        char="${left_str:$j:1}"
+        printf '%s' "$char"
+        [[ "$char" != " " ]] && sleep "$char_delay"
+    done
+    
+    for (( j=0; j<${#formatted_label}; j++ )); do
+        char="${formatted_label:$j:1}"
+        printf '%s' "$char"
+        [[ "$char" != " " ]] && sleep "$char_delay"
+    done
+    
+    # Print Value Details in White
+    printf '%b' "$white"
+    for (( j=0; j<${#value}; j++ )); do
+        char="${value:$j:1}"
+        printf '%s' "$char"
+        [[ "$char" != " " ]] && sleep "$char_delay"
+    done
+    printf '%b\n' "$reset"
+done
+
+# Clean footer
+footer_text="  S K  //  FEDORA LINUX"
+
+printf '\n%b' "$blue$bold"
+for (( j=0; j<${#footer_text}; j++ )); do
+    char="${footer_text:$j:1}"
+    printf '%s' "$char"
+    [[ "$char" != " " ]] && sleep "$char_delay"
+done
+printf '%b\n\n' "$reset"
