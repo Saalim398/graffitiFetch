@@ -52,7 +52,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ---
 
-## ⚙️ Shell Integration (`~/.zshrc`)
+## Shell Integration (`~/.zshrc`)
 
 To ensure smooth startup performance, clean command functionality (`ls`, `git`), and prevent output suppression warnings when using Powerlevel10k, add the following optimized configuration block to your `~/.zshrc`:
 
@@ -118,7 +118,7 @@ fi
 
 ---
 
-## 🧪 Manual Usage
+## Manual Usage
 
 You can run the script manually in your terminal at any time:
 
@@ -128,7 +128,7 @@ graffiti-fetch
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/Saalim398/graffitiFetch/issues).
 
