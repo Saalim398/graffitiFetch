@@ -1,29 +1,27 @@
 #!/usr/bin/env bash
 
-# SAALIM GRAFFITI — Blue & White Fedora System Fetch with Hacker Animation
+
 
 set -u
 
-# Color palette (Blue & White)
+
 blue=$'\033[38;2;55;145;255m'
 white=$'\033[38;2;245;245;255m'
 dim=$'\033[38;2;125;145;175m'
 reset=$'\033[0m'
 bold=$'\033[1m'
 
-# Operating system and kernel
+
 source /etc/os-release 2>/dev/null || true
 os_name="${PRETTY_NAME:-Fedora Linux}"
 kernel="$(uname -r)"
 
-# CPU
 cpu="$(awk -F ': ' '/model name/ {print $2; exit}' /proc/cpuinfo)"
 cpu="${cpu:-Unknown CPU}"
 cpu="${cpu//(R)/}"
 cpu="${cpu//(TM)/}"
 cpu="${cpu//CPU /}"
 
-# GPU Cleaning Helper (Extracts bracket names like [GeForce MX330])
 clean_gpu() {
     local raw="$1"
     raw="${raw#*:} "
@@ -31,7 +29,7 @@ clean_gpu() {
     raw="${raw//Corporation /}"
     raw="${raw//Technologies Inc /}"
     
-    # Extract the user-friendly name inside square brackets if present
+   
     if [[ "$raw" =~ \[([^]]+)\] ]]; then
         raw="${BASH_REMATCH[1]}"
     fi
@@ -60,8 +58,6 @@ if command -v lspci >/dev/null 2>&1; then
         gpu2="$(clean_gpu "${detected_gpus[1]}")"
     fi
 fi
-
-# RAM usage in GiB
 read -r total available < <(
     awk '
       /^MemTotal:/ { total=$2 }
@@ -73,17 +69,14 @@ read -r total available < <(
 used="$(awk -v t="$total" -v a="$available" \
     'BEGIN { printf "%.1f", t-a }')"
 
-# Shell, desktop, and current user
 shell_name="${SHELL##*/}"
 desktop="${XDG_CURRENT_DESKTOP:-Unknown}"
 desktop="${desktop//:/ /}"
 current_user="${USER:-$(whoami)}"
 
-# Uptime
 uptime_text="$(uptime -p 2>/dev/null | sed 's/^up //')"
 uptime_text="${uptime_text:-Unknown}"
 
-# Build dynamic labels and values arrays
 labels=(
 'Host'
 '────────────────'
@@ -109,7 +102,6 @@ fi
 labels+=('RAM' 'Shell' 'Desktop' 'Uptime')
 values+=("$used / $total GiB" "$shell_name" "$desktop" "$uptime_text")
 
-# Left Column Branding Array
 left_side=(
 '  ███████╗██╗  ██╗'
 '  ██╔════╝██║ ██╔╝'
@@ -131,7 +123,6 @@ gap='     '
 
 printf '\n'
 
-# Hacker typing speed
 char_delay=0.003
 
 for i in "${!labels[@]}"; do
@@ -201,7 +192,6 @@ for i in "${!labels[@]}"; do
     printf '%b\n' "$reset"
 done
 
-# Clean footer
 footer_text="  S K  //  FEDORA LINUX"
 
 printf '\n%b' "$blue$bold"
